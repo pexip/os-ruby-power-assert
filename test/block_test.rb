@@ -1,146 +1,17 @@
-require 'test/unit'
-require 'power_assert'
-require 'ripper'
+if defined?(RubyVM) and ! RubyVM::InstructionSequence.compile_option[:specialized_instruction]
+  warn "#{__FILE__}: specialized_instruction is set to false"
+end
+
+require_relative 'test_helper'
 require 'set'
+require 'pry'
 
-class TestPowerAssert < Test::Unit::TestCase
-  class << self
-    def t(msg='', &blk)
-      loc = caller_locations(1, 1)[0]
-      test("#{loc.path} --location #{loc.lineno} #{msg}", &blk)
-    end
-  end
-
-  EXTRACT_METHODS_TEST = [
-    [[[:method, "c", 4], [:method, "b", 2], [:method, "d", 8], [:method, "a", 0]],
-      'a(b(c), d)'],
-
-    [[[:method, "a", 0], [:method, "b", 2], [:method, "d", 6], [:method, "c", 4]],
-      'a.b.c(d)'],
-
-    [[[:method, "b", 2], [:method, "a", 0], [:method, "c", 5], [:method, "e", 9], [:method, "d", 7]],
-      'a(b).c.d(e)'],
-
-    [[[:method, "b", 4], [:method, "a", 2], [:method, "c", 7], [:method, "e", 13], [:method, "g", 11], [:method, "d", 9], [:method, "f", 0]],
-      'f(a(b).c.d(g(e)))'],
-
-    [[[:method, "c", 5], [:method, "e", 11], [:method, "a", 0]],
-      'a(b: c, d: e)'],
-
-    [[[:method, "b", 2], [:method, "c", 7], [:method, "d", 10], [:method, "e", 15], [:method, "a", 0]],
-      'a(b => c, d => e)'],
-
-    [[[:method, "b", 4], [:method, "d", 10]],
-      '{a: b, c: d}'],
-
-    [[[:method, "a", 1], [:method, "b", 6], [:method, "c", 9], [:method, "d", 14]],
-      '{a => b, c => d}'],
-
-    [[[:method, "a", 2], [:method, "b", 5], [:method, "c", 10], [:method, "d", 13]],
-      '[[a, b], [c, d]]'],
-
-    [[[:method, "a", 0], [:method, "b", 2], [:method, "c", 5]],
-      'a b, c { d }'],
-
-    [[[:method, "a", 20]],
-      'assertion_message { a }'],
-
-    [[[:method, "a", 0]],
-      'a { b }'],
-
-    [[[:method, "c", 4], [:method, "B", 2], [:method, "d", 8], [:method, "A", 0]],
-      'A(B(c), d)'],
-
-    [[[:method, "c", 6], [:method, "f", 17], [:method, "h", 25], [:method, "a", 0]],
-      'a(b = c, (d, e = f), G = h)'],
-
-    [[[:method, "b", 2], [:method, "c", 6], [:method, "d", 9], [:method, "e", 12], [:method, "g", 18], [:method, "i", 24], [:method, "j", 29], [:method, "a", 0]],
-      'a(b, *c, d, e, f: g, h: i, **j)'],
-
-    [[[:method, "a", 0], [:method, "b", 5], [:method, "c", 9], [:method, "+", 7], [:method, "==", 2]],
-      'a == b + c'],
-
-    [[[:ref, "var", 0], [:ref, "var", 8], [:method, "var", 4]],
-      'var.var(var)'],
-
-    [[[:ref, "B", 2], [:ref, "@c", 5], [:ref, "@@d", 9], [:ref, "$e", 14], [:method, "f", 18], [:method, "self", 20], [:ref, "self", 26], [:method, "a", 0]],
-      'a(B, @c, @@d, $e, f.self, self)'],
-
-    [[[:method, "a", 0], [:method, "c", 4], [:method, "b", 2]],
-      'a.b c'],
-
-    [[[:method, "b", 4]],
-      '"a#{b}c"'],
-
-    [[[:method, "b", 4]],
-      '/a#{b}c/'],
-
-    [[],
-      '[]'],
-
-    [[[:method, "a", 0], [:method, "[]", 1]],
-      'a[0]'],
-
-    # not supported
-    [[],
-      '[][]'],
-
-    # not supported
-    [[],
-      '{}[]'],
-
-    [[[:method, "a", 1], [:method, "!", 0]],
-      '!a'],
-
-    [[[:method, "a", 1], [:method, "+@", 0]],
-      '+a'],
-
-    [[[:method, "a", 1], [:method, "-@", 0]],
-      '-a'],
-
-    [[[:method, "a", 2], [:method, "!", 0], [:method, "b", 9], [:method, "+@", 8], [:method, "c", 15], [:method, "-@", 14],
-        [:method, "==", 11], [:method, "==", 4]],
-      '! a == (+b == -c)'],
-
-    [[[:method, "b", 6]],
-      '%x{a#{b}c}'],
-
-    [[[:method, "a", 0], [:method, "b", 3]],
-      "a..b"],
-
-    [[[:method, "a", 0], [:method, "b", 4]],
-      "a...b"],
-
-    [[[:method, "b", 5]],
-      ':"a#{b}c"'],
-
-    # not supported
-    [[],
-      '->{}.()'],
-
-    [[[:method, "a", 0], [:method, "b", 3], [:method, "call", 2]],
-      'a.(b)'],
-  ]
-
-  EXTRACT_METHODS_TEST.each_with_index do |(expect, source), idx|
-    define_method("test_extract_methods_#{'%03d' % idx}") do
-      pa = PowerAssert.const_get(:Context).new(-> { var = nil; -> { var } }.(), nil, TOPLEVEL_BINDING)
-      pa.instance_variable_set(:@line, source)
-      pa.instance_variable_set(:@assertion_method_name, 'assertion_message')
-      assert_equal expect, pa.send(:extract_idents, Ripper.sexp(source)).map(&:to_a), source
-    end
-  end
+class TestBlockContext < Test::Unit::TestCase
+  include PowerAssertTestHelper
 
   class BasicObjectSubclass < BasicObject
     def foo
       "foo"
-    end
-  end
-
-  def assertion_message(source = nil, source_binding = TOPLEVEL_BINDING, &blk)
-    ::PowerAssert.start(source || blk, assertion_method: __callee__, source_binding: source_binding) do |pa|
-      pa.yield
-      pa.message
     end
   end
 
@@ -334,6 +205,32 @@ END
     end
 
     t do
+      omit 'String#-@ is not defined' unless 'a'.respond_to?(:-@)
+      assert_equal <<END.chomp, assertion_message {
+        -'a'
+        |
+        "a"
+END
+        -'a'
+      }
+    end
+
+    t do
+      a = 0
+      assert_equal <<END.chomp, assertion_message {
+        [a, 1].max + [a, 1].min
+         |     |   |  |     |
+         |     |   |  |     0
+         |     |   |  0
+         |     |   1
+         |     1
+         0
+END
+        [a, 1].max + [a, 1].min
+      }
+    end
+
+    t do
       assert_equal <<END.chomp, assertion_message {
         ! Object
         | |
@@ -342,6 +239,81 @@ END
 END
         ! Object
       }
+    end
+
+    t do
+      assert_equal <<END.chomp, assertion_message {
+        0 == 0 ? 1 : 2
+          |
+          true
+END
+        0 == 0 ? 1 : 2
+      }
+    end
+
+    t do
+      assert_equal <<END.chomp, assertion_message {
+	[].class
+	   |
+	   Array
+END
+	[].class
+      }
+    end
+
+    sub_test_case 'attribute' do
+      # TracePoint cannot trace attributes
+      # https://bugs.ruby-lang.org/issues/10470
+      setup do
+        @obj = Class.new do
+          attr_accessor :to_i
+          def inspect; '#<Class>'; end
+        end.new
+        @obj.to_i = 0
+      end
+
+      t do
+        assert_equal <<END.chomp, assertion_message {
+          @obj.to_i.to_i.to_s
+          |              |
+          |              "0"
+          #<Class>
+END
+          @obj.to_i.to_i.to_s
+        }
+      end
+
+      t do
+        assert_equal <<END.chomp, assertion_message {
+          true ? @obj.to_i.to_s : @obj.to_i
+                 |         |
+                 |         "0"
+                 #<Class>
+END
+          true ? @obj.to_i.to_s : @obj.to_i
+        }
+      end
+    end
+
+    t do
+      th = Thread.start do
+        while true
+          __id__
+        end
+      end
+      begin
+        20.times do
+          assert_equal <<END.chomp,
+          assertion_message { "0".class }
+                                  |
+                                  String
+END
+          assertion_message { "0".class }
+        end
+      ensure
+        th.kill
+        th.join
+      end
     end
 
     if PowerAssert.respond_to?(:clear_global_method_cache, true)
@@ -368,7 +340,7 @@ END
                           |                   |   |
                           |                   |   "foo"
                           |                   InspectionFailure: NoMethodError: .*
-                          TestPowerAssert::BasicObjectSubclass
+                          TestBlockContext::BasicObjectSubclass
 END
       assertion_message { BasicObjectSubclass.new.foo }
     end
@@ -376,7 +348,7 @@ END
     t do
       o = Object.new
       def o.inspect
-        raise
+        raise ''
       end
       assert_equal <<END.chomp.b, assertion_message {
         o.class
@@ -394,7 +366,7 @@ END
       begin
         PowerAssert.configure do |c|
           c._trace_alias_method = true
-        end
+        end unless PowerAssert.const_get(:SUPPORT_ALIAS_METHOD)
         @o = Class.new do
           def foo
             :foo
@@ -406,7 +378,7 @@ END
       ensure
         PowerAssert.configure do |c|
           c._trace_alias_method = false
-        end
+        end unless PowerAssert.const_get(:SUPPORT_ALIAS_METHOD)
       end
     end
 
@@ -422,11 +394,13 @@ END
     end
 
     t do
-      omit 'alias of cfunc is not supported yet'
+      unless PowerAssert.const_get(:SUPPORT_ALIAS_METHOD)
+        omit 'alias of cfunc is not supported yet'
+      end
       assert_match Regexp.new(<<END.chomp.gsub('|', "\\|")),
         assertion_message { @o.new.alias_of_cfunc }
                             |  |   |
-                            |  |   #<#<Class:.*>:.*>
+                            |  |   "#<#<Class:.*>:.*>"
                             |  #<#<Class:.*>:.*>
                             #<Class:.*>
 END
@@ -469,12 +443,129 @@ END
     end
   end
 
+  sub_test_case 'branch' do
+    t do
+      a, b, = 0, 1
+      assert_equal <<END.chomp, assertion_message {
+        a == 0 ? b.to_s : b.to_i
+        | |      | |
+        | |      | "1"
+        | |      1
+        | true
+        0
+END
+        a == 0 ? b.to_s : b.to_i
+      }
+    end
+
+    t do
+      a, b, = 0, 1
+      assert_equal <<END.chomp, assertion_message {
+        a == 1 ? b.to_s : b.to_i
+        | |               | |
+        | |               | 1
+        | |               1
+        | false
+        0
+END
+        a == 1 ? b.to_s : b.to_i
+      }
+    end
+
+    t do
+      assert_equal <<END, assertion_message {
+        false ? 0.to_s : 0.to_s
+END
+        false ? 0.to_s : 0.to_s
+      }
+    end
+
+    t do
+      assert_equal <<END.chomp, assertion_message {
+        false ? 0.to_s.to_i : 0.to_s
+                                |
+                                "0"
+END
+        false ? 0.to_s.to_i : 0.to_s
+      }
+    end
+
+    t do
+      a = true
+      b = false
+      c = true
+      assert_equal <<END.chomp, assertion_message {
+        if a then b == c else b != c end
+           |      | |  |
+           |      | |  true
+           |      | false
+           |      false
+           true
+END
+        if a then b == c else b != c end
+      }
+    end
+
+    t do
+      a = true
+      b = false
+      c = true
+      assert_equal <<END.chomp, assertion_message {
+        unless a then b == c else b != c end
+               |                  | |  |
+               |                  | |  true
+               |                  | true
+               |                  false
+               true
+END
+        unless a then b == c else b != c end
+      }
+    end
+  end
+
+  data(
+       '_colorize_message/_use_pp' => [true,  true],
+       '_colorize_message'         => [true, false],
+       '_use_pp'                   => [false, true]
+  )
+  def test_colorized_pp((_colorize_message, _use_pp))
+    begin
+      PowerAssert.configure do |c|
+        c.lazy_inspection = true
+        c._colorize_message = _colorize_message
+        c._use_pp = _use_pp
+      end
+      assert_equal <<END.chomp, Pry::Helpers::Text.strip_color(assertion_message {
+        0 == 0
+          |
+          true
+END
+        0 == 0
+      })
+      if _colorize_message
+        assert_not_equal <<END.chomp, assertion_message {
+          0 == 0
+            |
+            true
+END
+          0 == 0
+        }
+      end
+    ensure
+      PowerAssert.configure do |c|
+        c._use_pp = false
+        c._colorize_message = false
+        c.lazy_inspection = false
+      end
+    end
+  end
+
   def test_assertion_message_with_string
     a, = 0, a # suppress "assigned but unused variable" warning
     @b = 1
     @@c = 2
     $d = 3
-    assert_equal <<END.chomp, assertion_message(<<END, binding)
+    assert_equal <<ENDA.chomp, assertion_message(<<ENDB, binding)
       String(a) + String(@b) + String(@@c) + String($d)
       |      |  | |      |   | |      |    | |      |
       |      |  | |      |   | |      |    | |      3
@@ -488,9 +579,9 @@ END
       |      |  "01"
       |      0
       "0"
-END
+ENDA
       String(a) + String(@b) + String(@@c) + String($d)
-END
+ENDB
   end
 
   def test_workaround_for_ruby_2_2

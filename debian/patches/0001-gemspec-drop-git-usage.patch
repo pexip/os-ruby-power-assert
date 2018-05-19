@@ -1,0 +1,21 @@
+From: Antonio Terceiro <terceiro@debian.org>
+Date: Sat, 19 May 2018 12:58:15 -0300
+Subject: gemspec: drop git usage
+
+---
+ power_assert.gemspec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/power_assert.gemspec b/power_assert.gemspec
+index 19e00a4..8099a29 100644
+--- a/power_assert.gemspec
++++ b/power_assert.gemspec
+@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
+   s.summary     = "Power Assert for Ruby"
+   s.description = "Power Assert for Ruby. Power Assert shows each value of variables and method calls in the expression. It is useful for testing, providing which value wasn't correct when the condition is not satisfied."
+ 
+-  s.files         = `git ls-files -z`.split("\x0").reject do |f|
++  s.files         = (Dir.glob('**/*') - Dir.glob('debian/**/*')).reject do |f|
+     f.match(%r{^(test|spec|features|benchmark)/})
+   end
+   s.bindir        = 'exe'
