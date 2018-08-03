@@ -1,3 +1,9 @@
+ruby-power-assert (0.3.0-1pexip1) pexip; urgency=medium
+
+  * Prepare Pexip packaging
+
+ -- John-Mark Bell <jmb@pexip.com>  Fri, 03 Aug 2018 18:56:34 +0000
+
 ruby-power-assert (0.3.0-1) unstable; urgency=medium
 
   * Imported Upstream version 0.3.0
