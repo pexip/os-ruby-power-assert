@@ -14,7 +14,7 @@ Vcs-Browser: https://anonscm.debian.org/cgit/pkg-ruby-extras/ruby-power-assert.g
 Homepage: https://github.com/k-tsj/power_assert
 Testsuite: autopkgtest-pkg-ruby
 XS-Ruby-Versions: all
-XS-Pexip-Upstream: http://ftp.debian.org/debian/ stretch
+XS-Pexip-Upstream: http://ftp.debian.org/debian/ buster
 
 Package: ruby-power-assert
 Architecture: all
