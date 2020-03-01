@@ -1,3 +1,17 @@
+ruby-power-assert (1.1.1-1) unstable; urgency=medium
+
+  * Team upload
+  * debian/watch: download tarballs from github
+  * New upstream version 1.1.1
+  * Bump Standards-Version to 4.1.4; no changes needed
+  * Bump debhelper compatibility level to 11
+  * Changes Vcs-* to point to salsa.debian.org
+  * Add missing build-dependencies on ruby-byebug, ruby-bundlerm,
+    ruby-simplecov, and pry
+  * Add patch to drop git usage from gemspec
+
+ -- Antonio Terceiro <terceiro@debian.org>  Sat, 19 May 2018 12:43:23 -0300
+
 ruby-power-assert (0.3.0-1pexip1) pexip; urgency=medium
 
   * Prepare Pexip packaging
