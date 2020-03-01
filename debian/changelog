@@ -1,3 +1,9 @@
+ruby-power-assert (1.1.1-1pexip1) pexip; urgency=medium
+
+  * Migrate to Buster
+
+ -- Vincent Sanders <vince@pexip.com>  Sun, 01 Mar 2020 19:33:12 +0000
+
 ruby-power-assert (1.1.1-1) unstable; urgency=medium
 
   * Team upload
